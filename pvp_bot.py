@@ -7,6 +7,18 @@ bot = telebot.TeleBot(API_TOKEN)
 leagues = ['GreatLeague', 'UltraLeague', 'MasterLeague']
 
 
+def fill_names_list():
+    workbook = load_workbook(filename='pokemon_leagues.xlsx', read_only=True)
+    names_sheet = workbook['pokemon_names']
+    pokemon_names = []
+    for row in names_sheet.rows:
+        for cell in row:
+            if cell.value is not None:
+                cell_val = '' + cell.value
+                pokemon_names.append(cell_val.lower())
+    return pokemon_names
+
+
 @bot.message_handler(commands=['top20'])
 def send_top20(message):
     bot.send_message(message.chat.id, "Select the league", reply_markup=gen_leagues())
@@ -20,7 +32,7 @@ def gen_leagues():
     return markup
 
 
-@bot.callback_query_handler(func=lambda query: query.data in ('GreatLeague', 'UltraLeague', 'MasterLeague'))
+@bot.callback_query_handler(func=lambda query: query.data in leagues)
 def callback_query(call):
     workbook = load_workbook(filename='pokemon_leagues.xlsx', read_only=True)
     if call.data == 'GreatLeague':
@@ -55,13 +67,24 @@ You can start with commands /top20\
 """)
 
 
-@bot.message_handler(func=lambda message: True)
-def echo_message(message):
+@bot.message_handler(func=lambda message: message.text in fill_names_list())
+def pokemon_info(message):
+    pokemon_names = fill_names_list()
     message.text = message.text.lower()
-    if message.text == 'hello':
-        bot.reply_to(message, 'Hello, how are you?')
-    else:
-        bot.reply_to(message, 'I don\'t know what to do, try with /help or /top20.')
+    for name in pokemon_names:
+        if message.text == name.lower():
+            get_pokemon_info()
+            print(name.lower())
+
+
+def get_pokemon_info():
+    print('ciao')
+
+
+@bot.message_handler(func=lambda message: message.text not in fill_names_list())
+def echo_message(message):
+    print(fill_names_list())
+    bot.reply_to(message, 'I don\'t know what to do, try with /help or /top20.')
 
 
 bot.infinity_polling()
