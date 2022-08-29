@@ -10,13 +10,16 @@ leagues = ['GreatLeague', 'UltraLeague', 'MasterLeague']
 def fill_names_list():
     workbook = load_workbook(filename='pokemon_leagues.xlsx', read_only=True)
     names_sheet = workbook['pokemon_names']
-    pokemon_names = []
+    names = []
     for row in names_sheet.rows:
         for cell in row:
             if cell.value is not None:
                 cell_val = '' + cell.value
-                pokemon_names.append(cell_val.lower())
-    return pokemon_names
+                names.append(cell_val.lower())
+    return names
+
+
+pokemon_names = fill_names_list()
 
 
 @bot.message_handler(commands=['top20'])
@@ -67,23 +70,40 @@ You can start with commands /top20\
 """)
 
 
-@bot.message_handler(func=lambda message: message.text in fill_names_list())
-def pokemon_info(message):
-    pokemon_names = fill_names_list()
-    message.text = message.text.lower()
+@bot.message_handler(func=lambda message: message.text.lower() in pokemon_names)
+def find_pokemon_info(message):
+    message_name = message.text.lower()
+    pokemon_info = ''
     for name in pokemon_names:
-        if message.text == name.lower():
-            get_pokemon_info()
-            print(name.lower())
+        if message_name == name:
+            pokemon_info = get_pokemon_info(name)
+    bot.reply_to(message, pokemon_info, parse_mode='Markdown')
 
 
-def get_pokemon_info():
-    print('ciao')
+def get_pokemon_info(name):
+    return get_info_great(name)
 
 
-@bot.message_handler(func=lambda message: message.text not in fill_names_list())
+def get_info_great(name):
+    wb = load_workbook(filename='pokemon_leagues.xlsx', read_only=True)
+    league_info = wb['great_league']
+    for row in league_info.rows:
+        if row[0].value == name:
+            for cell in row:
+                cell_row = cell.row
+                cell_col = cell.column
+                score = '' + str(league_info.cell(cell_row, cell_col + 1).value)
+                position = '' + str(league_info.cell(cell_row, cell_col + 7).value)
+                fast_move = '' + str(league_info.cell(cell_row, cell_col + 4).value)
+                charged_move1 = '' + str(league_info.cell(cell_row, cell_col + 5).value)
+                charged_move2 = '' + str(league_info.cell(cell_row, cell_col + 6).value)
+                info_string = '*Great League:* \n\n*Position* \n' + position + '\n\n*Score* \n' + score + '\n\n*FastMove* \n' + fast_move + '\n\n*ChargedMoves* \n' + charged_move1 + ' \n' + charged_move2
+                return info_string
+    return ''
+
+
+@bot.message_handler(func=lambda message: message.text.lower() not in pokemon_names)
 def echo_message(message):
-    print(fill_names_list())
     bot.reply_to(message, 'I don\'t know what to do, try with /help or /top20.')
 
 
