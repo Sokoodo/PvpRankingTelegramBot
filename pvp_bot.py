@@ -76,28 +76,39 @@ def find_pokemon_info(message):
     pokemon_info = ''
     for name in pokemon_names:
         if message_name == name:
-            pokemon_info = get_pokemon_info(name)
-    bot.reply_to(message, pokemon_info, parse_mode='Markdown')
+            pokemon_info = get_full_info(name)
+    for info in pokemon_info:
+        bot.send_message(message.chat.id, info, parse_mode='Markdown')
 
 
-def get_pokemon_info(name):
-    return get_info_great(name)
+def get_full_info(name):
+    great_info = get_info_leagues(name, 'great_league')
+    ultra_info = get_info_leagues(name, 'ultra_league')
+    master_info = get_info_leagues(name, 'master_league')
+    info_concat = []
+    if great_info != '':
+        info_concat.append(great_info)
+    if ultra_info != '':
+        info_concat.append(ultra_info)
+    if master_info != '':
+        info_concat.append(master_info)
+    return info_concat
 
 
-def get_info_great(name):
+def get_info_leagues(name, str_league):
     wb = load_workbook(filename='pokemon_leagues.xlsx', read_only=True)
-    league_info = wb['great_league']
-    for row in league_info.rows:
+    league_sheet = wb[str_league]
+    for row in league_sheet.rows:
         if row[0].value == name:
             for cell in row:
                 cell_row = cell.row
                 cell_col = cell.column
-                score = '' + str(league_info.cell(cell_row, cell_col + 1).value)
-                position = '' + str(league_info.cell(cell_row, cell_col + 7).value)
-                fast_move = '' + str(league_info.cell(cell_row, cell_col + 4).value)
-                charged_move1 = '' + str(league_info.cell(cell_row, cell_col + 5).value)
-                charged_move2 = '' + str(league_info.cell(cell_row, cell_col + 6).value)
-                info_string = '*Great League:* \n\n*Position* \n' + position + '\n\n*Score* \n' + score + '\n\n*FastMove* \n' + fast_move + '\n\n*ChargedMoves* \n' + charged_move1 + ' \n' + charged_move2
+                score = '' + str(league_sheet.cell(cell_row, cell_col + 1).value)
+                position = '' + str(league_sheet.cell(cell_row, cell_col + 7).value)
+                fast_move = '' + str(league_sheet.cell(cell_row, cell_col + 4).value)
+                charged_move1 = '' + str(league_sheet.cell(cell_row, cell_col + 5).value)
+                charged_move2 = '' + str(league_sheet.cell(cell_row, cell_col + 6).value)
+                info_string = '*' + str_league + ':* \n\n*Position* \n' + position + '\n\n*Score* \n' + score + '\n\n*FastMove* \n' + fast_move + '\n\n*ChargedMoves* \n' + charged_move1 + ' \n' + charged_move2
                 return info_string
     return ''
 
